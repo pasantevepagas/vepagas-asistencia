@@ -33,7 +33,6 @@ class MainActivity : ComponentActivity() {
                     ui.sesion == null -> PantallaLogin(
                         ui = ui,
                         onGoogle = { vm.loginGoogle(this) },
-                        onDesarrollo = vm::loginDesarrollo,
                         onDescartarMensaje = vm::descartarMensaje,
                     )
                     ui.pantalla == Pantalla.TIPOS -> PantallaTipos(
@@ -48,6 +47,7 @@ class MainActivity : ComponentActivity() {
                         onIngreso = { vm.abrirRegistro(Accion.INGRESO) },
                         onSalida = { vm.abrirRegistro(Accion.SALIDA) },
                         onVolver = { vm.volver() },
+                        onCerrarSesion = { vm.cerrarSesion(this) },
                         onDescartarMensaje = vm::descartarMensaje,
                     )
                     else -> PantallaRegistro(

@@ -28,6 +28,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -75,33 +76,48 @@ private val PERMISOS_UBICACION = arrayOf(Manifest.permission.ACCESS_FINE_LOCATIO
 // Componentes comunes (estilo de la app Power Apps)
 // =====================================================================
 
-/** Marco: franja amarilla arriba/abajo, contenido centrado y pie "by ICT - Vepagas". */
+/** Marco corporativo: cabecera negra con línea roja, fila superior (atrás / cerrar sesión) y pie. */
 @Composable
 private fun Marco(
     titulo: String? = null,
     onVolver: (() -> Unit)? = null,
+    onCerrarSesion: (() -> Unit)? = null,
     contenido: @Composable ColumnScope.() -> Unit,
 ) {
+    var confirmarSalida by remember { mutableStateOf(false) }
+
     Column(Modifier.fillMaxSize().background(Color.White).safeDrawingPadding()) {
         if (titulo != null) {
-            Box(Modifier.fillMaxWidth().background(AmarilloVepagas).padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                Text(titulo, color = Color.White, fontSize = 20.sp)
+            Box(Modifier.fillMaxWidth().background(NegroVepagas).padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
+                Text(titulo, color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Medium)
             }
         } else {
-            Box(Modifier.fillMaxWidth().height(8.dp).background(AmarilloVepagas))
+            Box(Modifier.fillMaxWidth().height(6.dp).background(NegroVepagas))
         }
+        Box(Modifier.fillMaxWidth().height(3.dp).background(RojoVepagas))
 
         Column(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (onVolver != null) {
-                Box(Modifier.fillMaxWidth().padding(top = 10.dp)) {
-                    Image(
-                        painterResource(R.drawable.ic_atras),
-                        contentDescription = "Atrás",
-                        modifier = Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onVolver),
-                    )
+            if (onVolver != null || onCerrarSesion != null) {
+                Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (onVolver != null) {
+                        Image(
+                            painterResource(R.drawable.ic_atras),
+                            contentDescription = "Atrás",
+                            modifier = Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onVolver),
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    if (onCerrarSesion != null) {
+                        Box(
+                            Modifier.size(44.dp).clip(CircleShape).clickable { confirmarSalida = true },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Image(painterResource(R.drawable.ic_salir), contentDescription = "Cerrar sesión", modifier = Modifier.size(26.dp))
+                        }
+                    }
                 }
             } else {
                 Spacer(Modifier.height(24.dp))
@@ -117,7 +133,23 @@ private fun Marco(
             fontStyle = FontStyle.Italic,
             color = GrisTexto,
         )
-        Box(Modifier.fillMaxWidth().height(8.dp).background(AmarilloVepagas))
+        Box(Modifier.fillMaxWidth().height(3.dp).background(RojoVepagas))
+        Box(Modifier.fillMaxWidth().height(6.dp).background(NegroVepagas))
+    }
+
+    if (confirmarSalida && onCerrarSesion != null) {
+        AlertDialog(
+            onDismissRequest = { confirmarSalida = false },
+            title = { Text("Cerrar sesión") },
+            text = { Text("¿Desea cerrar su sesión en este teléfono?") },
+            confirmButton = {
+                Button(
+                    onClick = { confirmarSalida = false; onCerrarSesion() },
+                    colors = ButtonDefaults.buttonColors(containerColor = RojoVepagas, contentColor = Color.White),
+                ) { Text("Cerrar sesión") }
+            },
+            dismissButton = { TextButton(onClick = { confirmarSalida = false }) { Text("Cancelar", color = NegroVepagas) } },
+        )
     }
 }
 
@@ -132,14 +164,14 @@ private fun Logo(ancho: Dp) {
 }
 
 @Composable
-private fun BotonAmarillo(texto: String, onClick: () -> Unit, modifier: Modifier = Modifier, habilitado: Boolean = true, contenido: (@Composable () -> Unit)? = null) {
+private fun BotonPrincipal(texto: String, onClick: () -> Unit, modifier: Modifier = Modifier, habilitado: Boolean = true, contenido: (@Composable () -> Unit)? = null) {
     Button(
         onClick = onClick,
         enabled = habilitado,
         shape = RoundedCornerShape(6.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = AmarilloVepagas, contentColor = Color.White,
-            disabledContainerColor = AmarilloVepagas.copy(alpha = 0.5f), disabledContentColor = Color.White,
+            containerColor = RojoVepagas, contentColor = Color.White,
+            disabledContainerColor = RojoVepagas.copy(alpha = 0.5f), disabledContentColor = Color.White,
         ),
         modifier = modifier,
     ) {
@@ -171,9 +203,7 @@ private fun tienePermisoUbicacion(context: android.content.Context) =
 // =====================================================================
 
 @Composable
-fun PantallaLogin(ui: UiEstado, onGoogle: () -> Unit, onDesarrollo: (String) -> Unit, onDescartarMensaje: () -> Unit) {
-    var correoDev by rememberSaveable { mutableStateOf("") }
-
+fun PantallaLogin(ui: UiEstado, onGoogle: () -> Unit, onDescartarMensaje: () -> Unit) {
     Marco {
         Spacer(Modifier.height(48.dp))
         Logo(280.dp)
@@ -181,8 +211,8 @@ fun PantallaLogin(ui: UiEstado, onGoogle: () -> Unit, onDesarrollo: (String) -> 
         Text("Nos empeñamos en la\nintegridad de nuestra gente", textAlign = TextAlign.Center, fontStyle = FontStyle.Italic, color = GrisTexto)
         Spacer(Modifier.height(56.dp))
 
-        BotonAmarillo("Iniciar sesión con Google", onGoogle, Modifier.fillMaxWidth().height(52.dp), habilitado = !ui.cargando)
-        if (ui.cargando) { Spacer(Modifier.height(16.dp)); CircularProgressIndicator(color = AmarilloVepagas) }
+        BotonPrincipal("Iniciar sesión con Google", onGoogle, Modifier.fillMaxWidth().height(52.dp), habilitado = !ui.cargando)
+        if (ui.cargando) { Spacer(Modifier.height(16.dp)); CircularProgressIndicator(color = RojoVepagas) }
         ui.mensaje?.let { TarjetaMensaje(it, onDescartarMensaje) }
 
         Spacer(Modifier.height(16.dp))
@@ -190,20 +220,6 @@ fun PantallaLogin(ui: UiEstado, onGoogle: () -> Unit, onDesarrollo: (String) -> 
             "Solo cuentas autorizadas por Talento Humano. La ubicación se registra únicamente al timbrar.",
             style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, color = GrisTexto,
         )
-
-        if (BuildConfig.PERMITIR_LOGIN_DEV) {
-            Spacer(Modifier.height(28.dp))
-            Text("— Solo pruebas (build debug) —", style = MaterialTheme.typography.labelSmall, color = GrisTexto)
-            OutlinedTextField(
-                value = correoDev, onValueChange = { correoDev = it },
-                label = { Text("Correo de empleado de prueba") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedButton(
-                onClick = { onDesarrollo(correoDev) },
-                enabled = !ui.cargando && correoDev.contains('@'),
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Ingreso de prueba (sin Google)") }
-        }
     }
 }
 
@@ -227,9 +243,10 @@ fun PantallaTipos(
         tipoPendiente = null
     }
 
-    Marco {
-        Spacer(Modifier.height(72.dp))
+    Marco(onCerrarSesion = onCerrarSesion) {
+        Spacer(Modifier.height(28.dp))
         Logo(290.dp)
+        Text(ui.sesion?.correo.orEmpty(), fontSize = 12.sp, color = GrisTexto)
         Spacer(Modifier.height(80.dp))
 
         ui.bloqueado?.let { texto ->
@@ -237,9 +254,9 @@ fun PantallaTipos(
             OutlinedButton(onClick = onReintentar, enabled = !ui.cargando) { Text("Reintentar") }
         }
 
-        if (ui.cargando && ui.tipos.isEmpty()) CircularProgressIndicator(color = AmarilloVepagas)
+        if (ui.cargando && ui.tipos.isEmpty()) CircularProgressIndicator(color = RojoVepagas)
         ui.tipos.forEach { tipo ->
-            BotonAmarillo(
+            BotonPrincipal(
                 texto = tipo.etiqueta,
                 onClick = {
                     if (tienePermisoUbicacion(context)) onElegir(tipo.valor)
@@ -251,9 +268,6 @@ fun PantallaTipos(
             Spacer(Modifier.height(12.dp))
         }
         ui.mensaje?.let { TarjetaMensaje(it, onDescartarMensaje) }
-
-        Spacer(Modifier.height(40.dp))
-        TextButton(onClick = onCerrarSesion) { Text("Cerrar sesión (${ui.sesion?.correo.orEmpty()})", color = GrisTexto, fontSize = 12.sp) }
     }
 }
 
@@ -262,15 +276,15 @@ fun PantallaTipos(
 // =====================================================================
 
 @Composable
-fun PantallaBienvenida(ui: UiEstado, onIngreso: () -> Unit, onSalida: () -> Unit, onVolver: () -> Unit, onDescartarMensaje: () -> Unit) {
-    Marco(onVolver = onVolver) {
+fun PantallaBienvenida(ui: UiEstado, onIngreso: () -> Unit, onSalida: () -> Unit, onVolver: () -> Unit, onCerrarSesion: () -> Unit, onDescartarMensaje: () -> Unit) {
+    Marco(onVolver = onVolver, onCerrarSesion = onCerrarSesion) {
         Logo(210.dp)
         Text("Nos empeñamos en la\nintegridad de nuestra gente", textAlign = TextAlign.Center, fontStyle = FontStyle.Italic, color = GrisTexto, fontSize = 14.sp)
         Spacer(Modifier.height(20.dp))
 
         // Avatar (iniciales) en lugar de la foto de perfil de Microsoft 365.
         val iniciales = ui.sesion?.nombre.orEmpty().split(' ').filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }
-        Box(Modifier.size(108.dp).background(Color(0xFFA9A9A9)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(108.dp).clip(CircleShape).background(GrisOscuro), contentAlignment = Alignment.Center) {
             Text(iniciales.ifEmpty { "?" }, color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
         }
 
@@ -290,22 +304,22 @@ fun PantallaBienvenida(ui: UiEstado, onIngreso: () -> Unit, onSalida: () -> Unit
             Spacer(Modifier.height(6.dp))
             Text(texto, fontSize = 13.sp, color = if (j.estado == "SIN_INGRESO") GrisTexto else VerdeExito)
             if (j.ubicacionPendiente) Text("Ubicación pendiente de sincronizar", fontSize = 12.sp, color = AmbarAviso)
-        } ?: if (ui.cargando) CircularProgressIndicator(Modifier.padding(top = 6.dp).size(18.dp), color = AmarilloVepagas, strokeWidth = 2.dp) else Unit
+        } ?: if (ui.cargando) CircularProgressIndicator(Modifier.padding(top = 6.dp).size(18.dp), color = RojoVepagas, strokeWidth = 2.dp) else Unit
 
         Spacer(Modifier.height(20.dp))
         ui.mensaje?.let { TarjetaMensaje(it, onDescartarMensaje) }
         if (ui.marcacionSinConfirmar)
             TarjetaMensaje(Mensaje("Hay una timbrada sin confirmar. Vuelva a timbrar la misma opción; no se duplicará.", TipoMensaje.AVISO), null)
 
-        BotonAmarillo("Ingreso", onIngreso, Modifier.width(170.dp).height(44.dp))
+        BotonPrincipal("Ingreso", onIngreso, Modifier.width(170.dp).height(44.dp))
         Spacer(Modifier.height(14.dp))
         OutlinedButton(
             onClick = onSalida,
             shape = RoundedCornerShape(6.dp),
-            border = BorderStroke(1.dp, AmarilloVepagas),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = AmarilloVepagas),
+            border = BorderStroke(1.5.dp, NegroVepagas),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = NegroVepagas),
             modifier = Modifier.width(170.dp).height(44.dp),
-        ) { Text("salida", fontSize = 18.sp, fontWeight = FontWeight.SemiBold) }
+        ) { Text("Salida", fontSize = 18.sp, fontWeight = FontWeight.SemiBold) }
         Spacer(Modifier.height(16.dp))
     }
 }
@@ -387,7 +401,7 @@ fun PantallaRegistro(
             }) { Text("Abrir permisos de la app") }
         }
 
-        BotonAmarillo(
+        BotonPrincipal(
             texto = "Timbrar",
             onClick = {
                 if (tienePermisoUbicacion(context)) onTimbrar()

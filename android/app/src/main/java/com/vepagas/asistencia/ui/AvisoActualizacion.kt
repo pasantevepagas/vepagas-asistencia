@@ -63,14 +63,14 @@ fun AvisoActualizacion() {
                 Text("Versión ${nueva.versionName} (tiene ${BuildConfig.VERSION_NAME}).")
                 if (nueva.notas.isNotBlank()) Text(nueva.notas)
                 if (nueva.obligatoria) Text("Esta actualización es obligatoria para seguir timbrando.")
-                if (descargando) { Spacer(Modifier.height(12.dp)); LinearProgressIndicator(color = AmarilloVepagas) }
+                if (descargando) { Spacer(Modifier.height(12.dp)); LinearProgressIndicator(color = RojoVepagas) }
                 error?.let { Text(it, color = Color(0xFFB71C1C)) }
             }
         },
         confirmButton = {
             Button(
                 enabled = !descargando,
-                colors = ButtonDefaults.buttonColors(containerColor = AmarilloVepagas, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = RojoVepagas, contentColor = Color.White),
                 onClick = {
                     alcance.launch {
                         descargando = true; error = null

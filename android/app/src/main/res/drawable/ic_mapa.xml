@@ -9,7 +9,7 @@
     <path android:fillColor="#4FC3F7" android:pathData="M6,30L24,24L24,64L6,70Z" />
     <path android:fillColor="#81C784" android:pathData="M24,24L48,30L48,70L24,64Z" />
     <path android:fillColor="#4FC3F7" android:pathData="M48,30L66,24L66,64L48,70Z" />
-    <path android:strokeColor="#F2C53D" android:strokeWidth="3" android:pathData="M8,52L30,44L44,56L64,46" />
+    <path android:strokeColor="#9E9E9E" android:strokeWidth="3" android:pathData="M8,52L30,44L44,56L64,46" />
     <!-- Pin -->
     <path android:fillColor="#E53935"
         android:pathData="M36,2C27.7,2 21,8.7 21,17C21,28 36,44 36,44C36,44 51,28 51,17C51,8.7 44.3,2 36,2Z" />
