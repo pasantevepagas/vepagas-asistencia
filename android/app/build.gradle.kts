@@ -25,7 +25,17 @@ android {
         versionCode = providers.gradleProperty("vepagas.versionCode").orNull?.toInt() ?: 1
         versionName = providers.gradleProperty("vepagas.versionName").orNull ?: "0.1.0-local"
 
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${prop("vepagas.googleWebClientId")}\"")
+        mapOf(
+            "TENANT_ID" to "vepagas.tenantId",
+            "MSAL_CLIENT_ID" to "vepagas.msalClientId",
+            "SITE_ID" to "vepagas.siteId",
+            "LISTA_REGISTROS" to "vepagas.listaRegistros",
+            "LISTA_UBICACIONES" to "vepagas.listaUbicaciones",
+            "LISTA_DISPOSITIVOS" to "vepagas.listaDispositivos",
+            "LISTA_SESIONES" to "vepagas.listaSesiones",
+            "LISTA_UBICACION_APP" to "vepagas.listaUbicacionApp",
+            "RELEASES_REPO" to "vepagas.releasesRepo",
+        ).forEach { (campo, propiedad) -> buildConfigField("String", campo, "\"${prop(propiedad)}\"") }
     }
 
     signingConfigs {
@@ -40,18 +50,18 @@ android {
     }
 
     buildTypes {
+        // Redirect URI de MSAL: msauth://<applicationId>/<hash de firma> (registrado en Entra para cada variante).
         debug {
             applicationIdSuffix = ".debug"
-            buildConfigField("String", "API_BASE_URL", "\"${prop("vepagas.apiUrlDebug")}\"")
-            // Habilita el botón "Ingreso de prueba" (requiere backend en Development con PermitirLoginDesarrollo).
-            buildConfigField("boolean", "PERMITIR_LOGIN_DEV", "true")
+            buildConfigField("String", "FIRMA_HASH", "\"${prop("vepagas.firmaHashDebug")}\"")
+            manifestPlaceholders["firmaHash"] = prop("vepagas.firmaHashDebug")
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            buildConfigField("String", "API_BASE_URL", "\"${prop("vepagas.apiUrlRelease")}\"")
-            buildConfigField("boolean", "PERMITIR_LOGIN_DEV", "false")
+            buildConfigField("String", "FIRMA_HASH", "\"${prop("vepagas.firmaHashRelease")}\"")
+            manifestPlaceholders["firmaHash"] = prop("vepagas.firmaHashRelease")
             if (keystorePropsFile.exists()) signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -79,16 +89,11 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services)
-    implementation(libs.googleid)
+    implementation(libs.msal)
 
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
 
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.okhttp)
-    implementation(libs.okhttp.logging) // solo se activa si BuildConfig.DEBUG
 }

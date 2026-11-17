@@ -11,6 +11,9 @@ import com.vepagas.asistencia.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -25,6 +28,8 @@ data class InfoVersion(
     val sha256: String,
     val obligatoria: Boolean = false,
     val notas: String = "",
+    /** URL de descarga de la APK en GitHub Releases (no viene en version.json; se completa al buscar). */
+    @kotlinx.serialization.Transient val urlApk: String = "",
 )
 
 /**
@@ -34,15 +39,27 @@ data class InfoVersion(
  */
 class Actualizador(private val context: Context) {
     private val http = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS).readTimeout(120, TimeUnit.SECONDS).build()
-    private val base = BuildConfig.API_BASE_URL.trimEnd('/')
+    /** Último release del repo PÚBLICO de releases (GitHub). */
+    private val urlUltimo = "https://api.github.com/repos/${BuildConfig.RELEASES_REPO}/releases/latest"
 
-    /** Devuelve la versión del servidor si es más nueva que la instalada; null si no hay o falla. */
+    private fun get(url: String) = Request.Builder().url(url)
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "VepagasAsistencia")
+        .build()
+
+    /** Devuelve la versión publicada si es más nueva que la instalada; null si no hay o falla. */
     suspend fun buscar(): InfoVersion? = withContext(Dispatchers.IO) {
         runCatching {
-            http.newCall(Request.Builder().url("$base/app/version").build()).execute().use { r ->
-                if (!r.isSuccessful) return@use null
-                ClienteApi.json.decodeFromString<InfoVersion>(r.body.string())
+            val release = http.newCall(get(urlUltimo)).execute().use { r ->
+                if (!r.isSuccessful) return@runCatching null
+                JsonApp.parseToJsonElement(r.body.string()).jsonObject
             }
+            val assets = release["assets"]!!.jsonArray.map { it.jsonObject }
+            fun url(nombre: String) = assets.first { it["name"]!!.jsonPrimitive.content == nombre }["browser_download_url"]!!.jsonPrimitive.content
+            val info = http.newCall(get(url("version.json"))).execute().use { r ->
+                JsonApp.decodeFromString<InfoVersion>(r.body.string())
+            }
+            info.copy(urlApk = url("vepagas-asistencia.apk"))
         }.getOrNull()?.takeIf { it.versionCode > BuildConfig.VERSION_CODE }
     }
 
@@ -50,7 +67,7 @@ class Actualizador(private val context: Context) {
     suspend fun descargar(info: InfoVersion): File = withContext(Dispatchers.IO) {
         val dir = File(context.cacheDir, "actualizaciones").apply { mkdirs() }
         val destino = File(dir, "vepagas-asistencia.apk")
-        http.newCall(Request.Builder().url("$base/app/apk").build()).execute().use { r ->
+        http.newCall(get(info.urlApk)).execute().use { r ->
             check(r.isSuccessful) { "El servidor respondió ${r.code}" }
             destino.outputStream().use { r.body.byteStream().copyTo(it) }
         }

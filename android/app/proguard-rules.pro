@@ -1,4 +1,4 @@
-# kotlinx.serialization: conservar serializers de los DTO
+# kotlinx.serialization: conservar serializers de los modelos
 -keepattributes *Annotation*, InnerClasses, Signature, Exceptions
 -keepclassmembers @kotlinx.serialization.Serializable class com.vepagas.asistencia.** {
     *** Companion;
@@ -7,12 +7,14 @@
 }
 -keep,includedescriptorclasses class com.vepagas.asistencia.**$$serializer { *; }
 
-# Retrofit (interfaces con anotaciones)
--keep,allowobfuscation,allowshrinking interface retrofit2.Call
--keep,allowobfuscation,allowshrinking class retrofit2.Response
--keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
--keep interface com.vepagas.asistencia.datos.ApiAsistencia { *; }
-
-# Credential Manager / Google Identity
--if class androidx.credentials.CredentialManager
--keep class androidx.credentials.playservices.** { *; }
+# MSAL (usa reflexión/Gson internamente)
+-keep class com.microsoft.identity.** { *; }
+-dontwarn com.microsoft.identity.**
+-dontwarn com.microsoft.device.display.**
+-dontwarn edu.umd.cs.findbugs.annotations.**
+-dontwarn com.google.crypto.tink.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.conscrypt.**
+-dontwarn org.openjsse.**
+-dontwarn javax.naming.**
+-dontwarn com.nimbusds.**

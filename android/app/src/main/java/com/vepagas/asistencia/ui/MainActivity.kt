@@ -32,14 +32,14 @@ class MainActivity : ComponentActivity() {
                     ui.iniciando -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                     ui.sesion == null -> PantallaLogin(
                         ui = ui,
-                        onGoogle = { vm.loginGoogle(this) },
+                        onGoogle = { vm.iniciarSesion(this) },
                         onDescartarMensaje = vm::descartarMensaje,
                     )
                     ui.pantalla == Pantalla.TIPOS -> PantallaTipos(
                         ui = ui,
                         onElegir = vm::elegirTipo,
                         onReintentar = vm::reintentarVerificacion,
-                        onCerrarSesion = { vm.cerrarSesion(this) },
+                        onCerrarSesion = { vm.cerrarSesion() },
                         onDescartarMensaje = vm::descartarMensaje,
                     )
                     ui.pantalla == Pantalla.MENU -> PantallaBienvenida(
@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                         onIngreso = { vm.abrirRegistro(Accion.INGRESO) },
                         onSalida = { vm.abrirRegistro(Accion.SALIDA) },
                         onVolver = { vm.volver() },
-                        onCerrarSesion = { vm.cerrarSesion(this) },
+                        onCerrarSesion = { vm.cerrarSesion() },
                         onDescartarMensaje = vm::descartarMensaje,
                     )
                     else -> PantallaRegistro(

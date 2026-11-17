@@ -1,12 +1,12 @@
-# Compila la APK firmada en cada push a main que toque android/, crea un GitHub Release
-# y la publica en el servidor para que las apps instaladas se actualicen.
-# Secrets del repo:
-#   ANDROID_KEYSTORE_BASE64  keystore de release en base64
-#   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
-# Variables del repo:
-#   API_URL                  URL pública HTTPS con / final (la misma del workflow backend)
-#   CARPETA_ACTUALIZACIONES  en el servidor, p. ej. C:\VepagasAsistencia\actualizaciones
-#   ACTUALIZACION_OBLIGATORIA  "true" para obligar a actualizar (opcional)
+# En cada push a main que toque android/: compila la APK firmada y la publica como Release en el
+# repo PÚBLICO de releases. Las apps instaladas detectan la nueva versión al abrirse y ofrecen actualizar.
+#
+# Secrets del repo (Settings > Secrets and variables > Actions):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#   RELEASES_TOKEN   PAT fine-grained con "Contents: Read and write" SOLO sobre el repo de releases
+# Variables (opcionales):
+#   RELEASES_REPO              owner/repo público (por defecto el de android/gradle.properties)
+#   ACTUALIZACION_OBLIGATORIA  "true" para obligar a actualizar
 name: Android - compilar y publicar APK
 
 on:
@@ -19,13 +19,10 @@ on:
         description: 'Notas de la versión (se muestran al empleado)'
         required: false
 
-permissions:
-  contents: write
-
 concurrency: release-android
 
 jobs:
-  compilar:
+  publicar:
     runs-on: ubuntu-latest
     env:
       VERSION_CODE: ${{ github.run_number }}
@@ -55,8 +52,7 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon \
             -Pvepagas.versionCode=$((100 + VERSION_CODE)) \
-            -Pvepagas.versionName=$VERSION_NAME \
-            -Pvepagas.apiUrlRelease=${{ vars.API_URL }}
+            -Pvepagas.versionName=$VERSION_NAME
 
       - name: Preparar artefactos
         run: |
@@ -70,33 +66,11 @@ jobs:
                 '{versionCode:$vc, versionName:$vn, sha256:$sha, obligatoria:$obl, notas:$notas}' > salida/version.json
           cat salida/version.json
 
-      - name: Crear GitHub Release
+      - name: Publicar en el repo público de releases
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "v$VERSION_NAME" salida/vepagas-asistencia.apk salida/version.json --title "VEPAGAS Asistencia $VERSION_NAME" --notes-file <(jq -r .notas salida/version.json)
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: apk
-          path: salida/
-
-  publicar-en-servidor:
-    needs: compilar
-    runs-on: [self-hosted, windows, vepagas-iis]
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: apk
-          path: salida
-
-      - name: Copiar a la carpeta de actualizaciones
-        shell: powershell
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
-          $dest = "${{ vars.CARPETA_ACTUALIZACIONES }}"
-          if (-not $dest) { throw "Falta la variable CARPETA_ACTUALIZACIONES" }
-          New-Item -ItemType Directory -Force $dest | Out-Null
-          # Primero la APK y al final version.json: las apps nunca ven una versión sin su archivo.
-          Copy-Item salida\vepagas-asistencia.apk "$dest\vepagas-asistencia.apk.tmp" -Force
-          Move-Item "$dest\vepagas-asistencia.apk.tmp" "$dest\vepagas-asistencia.apk" -Force
-          Copy-Item salida\version.json "$dest\version.json" -Force
-          Get-Content "$dest\version.json"
+          REPO="${{ vars.RELEASES_REPO }}"
+          [ -z "$REPO" ] && REPO=$(grep '^vepagas.releasesRepo=' android/gradle.properties | cut -d= -f2)
+          gh release create "v$VERSION_NAME" salida/vepagas-asistencia.apk salida/version.json \
+            -R "$REPO" --title "VEPAGAS Asistencia $VERSION_NAME" --notes-file <(jq -r .notas salida/version.json)

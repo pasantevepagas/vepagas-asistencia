@@ -5,8 +5,6 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.vepagas.asistencia.VepagasApp
-import com.vepagas.asistencia.auth.InicioSesionGoogle
-import com.vepagas.asistencia.auth.ResultadoGoogle
 import com.vepagas.asistencia.datos.Accion
 import com.vepagas.asistencia.datos.EstadoJornada
 import com.vepagas.asistencia.datos.MarcacionRequest
@@ -71,21 +69,10 @@ class AsistenciaViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------- Sesión ----------------
 
-    fun loginGoogle(activity: Activity) = viewModelScope.launch {
+    /** Pantalla de inicio de sesión de Microsoft (el empleado Gmail entra como invitado del tenant). */
+    fun iniciarSesion(activity: Activity) = viewModelScope.launch {
         _ui.update { it.copy(cargando = true, mensaje = null) }
-        when (val g = InicioSesionGoogle.obtenerIdToken(activity)) {
-            is ResultadoGoogle.Ok -> procesarLogin(repo.loginGoogle(g.idToken))
-            // Google también devuelve "cancelado" ante errores de configuración (p. ej. [16] Account reauth failed).
-            ResultadoGoogle.Cancelado -> _ui.update {
-                it.copy(cargando = false, mensaje = Mensaje("No se completó el inicio de sesión con Google. Si no lo canceló usted, avise a TI.", TipoMensaje.AVISO))
-            }
-            is ResultadoGoogle.Error -> _ui.update { it.copy(cargando = false, mensaje = Mensaje(g.mensaje, TipoMensaje.ERROR)) }
-        }
-    }
-
-    fun loginDesarrollo(correo: String) = viewModelScope.launch {
-        _ui.update { it.copy(cargando = true, mensaje = null) }
-        procesarLogin(repo.loginDesarrollo(correo.trim()))
+        procesarLogin(repo.iniciarSesion(activity))
     }
 
     private fun procesarLogin(r: Resultado<SesionLocal>) {
@@ -97,9 +84,8 @@ class AsistenciaViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun cerrarSesion(activity: Activity) = viewModelScope.launch {
-        repo.logout()
-        InicioSesionGoogle.cerrar(activity)
+    fun cerrarSesion() = viewModelScope.launch {
+        repo.cerrarSesion()
         _ui.value = UiEstado(iniciando = false)
     }
 
@@ -143,7 +129,7 @@ class AsistenciaViewModel(app: Application) : AndroidViewModel(app) {
         // sin bloquear la navegación; si no hay permiso/GPS se registra sin coordenadas (igual que Power Apps).
         viewModelScope.launch {
             val u = if (proveedorUbicacion.tienePermiso()) proveedorUbicacion.obtener() as? ResultadoUbicacion.Ok else null
-            repo.registrarAcceso(tipo, u?.lat, u?.lon)
+            repo.registrarAcceso(u?.lat, u?.lon)
         }
     }
 

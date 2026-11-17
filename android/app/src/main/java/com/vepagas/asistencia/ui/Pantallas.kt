@@ -59,7 +59,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.vepagas.asistencia.BuildConfig
 import com.vepagas.asistencia.R
 import com.vepagas.asistencia.datos.Accion
 import kotlinx.coroutines.delay
@@ -211,7 +210,7 @@ fun PantallaLogin(ui: UiEstado, onGoogle: () -> Unit, onDescartarMensaje: () -> 
         Text("Nos empeñamos en la\nintegridad de nuestra gente", textAlign = TextAlign.Center, fontStyle = FontStyle.Italic, color = GrisTexto)
         Spacer(Modifier.height(56.dp))
 
-        BotonPrincipal("Iniciar sesión con Google", onGoogle, Modifier.fillMaxWidth().height(52.dp), habilitado = !ui.cargando)
+        BotonPrincipal("Iniciar sesión", onGoogle, Modifier.fillMaxWidth().height(52.dp), habilitado = !ui.cargando)
         if (ui.cargando) { Spacer(Modifier.height(16.dp)); CircularProgressIndicator(color = RojoVepagas) }
         ui.mensaje?.let { TarjetaMensaje(it, onDescartarMensaje) }
 
