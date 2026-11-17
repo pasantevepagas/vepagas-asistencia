@@ -1,0 +1,29 @@
+# Backend
+backend/**/bin/
+backend/**/obj/
+backend/**/App_Data/
+backend/**/publish/
+*.db
+*.db-shm
+*.db-wal
+appsettings.*.local.json
+.env
+
+# Android
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/app/release/
+*.jks
+*.keystore
+keystore.properties
+
+# IDE / SO
+.vs/
+.vscode/
+*.user
+Thumbs.db
