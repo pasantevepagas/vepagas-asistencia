@@ -164,6 +164,21 @@ keyPassword=...
 
 Instalar en el teléfono: `adb install -r app\build\outputs\apk\release\app-release.apk`, o copie el archivo al teléfono y habilite "instalar apps desconocidas".
 
+## 5-A. Despliegue automático con GitHub (vigente)
+
+| Cambio en `main` | Workflow | Resultado |
+|---|---|---|
+| `backend/**` | `.github/workflows/backend.yml` | `dotnet publish` en el runner del servidor y copia al sitio IIS. La copia no toca `appsettings.Production.json`, `App_Data`, `actualizaciones` ni `logs`. Al final verifica `/api/salud`. |
+| `android/**` | `.github/workflows/android.yml` | Compila la APK firmada en GitHub (versión `1.0.<n>`), crea un GitHub Release y copia `vepagas-asistencia.apk` y `version.json` a la carpeta de actualizaciones del servidor. |
+
+Las apps consultan `GET /api/app/version` cada vez que se abren. Si hay una versión nueva, muestran "Actualizar": descargan `/api/app/apk`, verifican el SHA-256 y abren el instalador de Android. La primera vez Android pide permitir "instalar apps desconocidas" para esta app. Para forzar la actualización, defina la variable `ACTUALIZACION_OBLIGATORIA=true`.
+
+**Configuración del servidor (una sola vez):** instale el Hosting Bundle .NET 10 y el SDK .NET 10 (para el runner). Cree el sitio IIS con HTTPS y las carpetas `C:\VepagasAsistencia\datos` y `C:\VepagasAsistencia\actualizaciones`, con permiso de escritura para el App Pool y el runner. Copie `backend/appsettings.Production.ejemplo.json` como `appsettings.Production.json` dentro del sitio y llénelo. Instale el runner: GitHub → Settings → Actions → Runners → New self-hosted runner → Windows, con la etiqueta `vepagas-iis`, como servicio.
+
+**Variables del repo:** `IIS_SITE_PATH`, `API_URL` (HTTPS, con `/` final), `CARPETA_ACTUALIZACIONES`. **Secrets:** `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Los valores están en `Documents\VepagasClaves\LEEME-CLAVES.txt`, que no se sube a git; haga respaldo.
+
+**Google:** cree un cliente OAuth Android de **release** con el paquete `com.vepagas.asistencia` y el SHA-1 de `LEEME-CLAVES.txt`.
+
 ## 5. Publicación del backend (IIS)
 
 ```powershell
