@@ -211,6 +211,8 @@ fun PantallaLogin(ui: UiEstado, onGoogle: () -> Unit, onDescartarMensaje: () -> 
         Spacer(Modifier.height(56.dp))
 
         BotonPrincipal("Iniciar sesión", onGoogle, Modifier.fillMaxWidth().height(52.dp), habilitado = !ui.cargando)
+        Spacer(Modifier.height(8.dp))
+        Text("Con su cuenta @vepagas.com o su Gmail", color = GrisTexto, textAlign = TextAlign.Center)
         if (ui.cargando) { Spacer(Modifier.height(16.dp)); CircularProgressIndicator(color = RojoVepagas) }
         ui.mensaje?.let { TarjetaMensaje(it, onDescartarMensaje) }
 
