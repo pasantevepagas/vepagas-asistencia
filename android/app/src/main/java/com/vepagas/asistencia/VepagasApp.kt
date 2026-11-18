@@ -8,7 +8,7 @@ import com.vepagas.asistencia.datos.IdentidadDispositivo
 import com.vepagas.asistencia.datos.RepositorioAsistencia
 import com.vepagas.asistencia.ubicacion.ProveedorUbicacion
 
-/** Contenedor de dependencias simple. Sin backend: la app habla directo con SharePoint del tenant. */
+/** Contenedor de dependencias simple. Sissssn backend: la app habla directo con SharePoint del tenant. */
 class VepagasApp : Application() {
     lateinit var repositorio: RepositorioAsistencia
         private set
