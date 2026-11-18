@@ -118,7 +118,7 @@ class SesionMicrosoft(private val context: Context) {
         return """
         {
           "client_id": "${BuildConfig.MSAL_CLIENT_ID}",
-          "authorization_user_agent": "DEFAULT",
+          "authorization_user_agent": "WEBVIEW",
           "redirect_uri": "$redirect",
           "account_mode": "SINGLE",
           "broker_redirect_uri_registered": false,
