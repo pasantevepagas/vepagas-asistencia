@@ -49,6 +49,9 @@ class Actualizador(private val context: Context) {
 
     /** Devuelve la versión publicada si es más nueva que la instalada; null si no hay o falla. */
     suspend fun buscar(): InfoVersion? = withContext(Dispatchers.IO) {
+        // La app de pruebas (.debug) es OTRA app para Android: "actualizarla" instalaría la release al lado,
+        // con otro ID de dispositivo, y el usuario quedaría bloqueado. Solo la release se actualiza.
+        if (BuildConfig.DEBUG) return@withContext null
         runCatching {
             val release = http.newCall(get(urlUltimo)).execute().use { r ->
                 if (!r.isSuccessful) return@runCatching null
