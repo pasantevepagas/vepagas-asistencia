@@ -9,7 +9,7 @@ val JsonApp = Json { ignoreUnknownKeys = true; explicitNulls = false }
 @Serializable data class TipoTrabajo(val valor: String, val etiqueta: String)
 
 /** Mismo `type` que usaba Power Apps. */
-val TIPOS_TRABAJO = listOf(TipoTrabajo("Home_Office", "Tele trabajo"))
+val TIPOS_TRABAJO = listOf(TipoTrabajo("Home_Office", "Registro de asistencia"))
 
 /** dispositivo: AUTORIZADO | REGISTRADO | MIGRADO (resultado del control de dispositivos_db). */
 data class PerfilResponse(val nombre: String, val correo: String, val tiposTrabajo: List<TipoTrabajo>, val dispositivo: String)
