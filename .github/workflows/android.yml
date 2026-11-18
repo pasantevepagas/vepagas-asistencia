@@ -28,17 +28,23 @@ jobs:
       VERSION_CODE: ${{ github.run_number }}
       VERSION_NAME: 1.0.${{ github.run_number }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Keystore de firma
         working-directory: android
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          RT: ${{ secrets.RELEASES_TOKEN }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > vepagas-release.jks
+          [ -n "$KS" ] || { echo "::error::Falta el secret ANDROID_KEYSTORE_BASE64"; exit 1; }
+          [ -n "$RT" ] || { echo "::error::Falta el secret RELEASES_TOKEN"; exit 1; }
+          echo "$KS" | tr -d '\r\n ' | base64 -d > vepagas-release.jks
+          [ -s vepagas-release.jks ] || { echo "::error::ANDROID_KEYSTORE_BASE64 no es base64 valido"; exit 1; }
           cat > keystore.properties <<EOF
           storeFile=vepagas-release.jks
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -50,9 +56,12 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
+          set -o pipefail
           ./gradlew assembleRelease --no-daemon \
             -Pvepagas.versionCode=$((100 + VERSION_CODE)) \
-            -Pvepagas.versionName=$VERSION_NAME
+            -Pvepagas.versionName=$VERSION_NAME 2>&1 | tee gradle.log || {
+              grep -E "^e: |FAILURE|What went wrong|wrong:|> " gradle.log | head -15 | while read -r l; do echo "::error::$l"; done
+              exit 1; }
 
       - name: Preparar artefactos
         run: |
