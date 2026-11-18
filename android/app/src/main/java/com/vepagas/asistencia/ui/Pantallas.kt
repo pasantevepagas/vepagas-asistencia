@@ -312,9 +312,18 @@ fun PantallaBienvenida(ui: UiEstado, onIngreso: () -> Unit, onSalida: () -> Unit
         if (ui.marcacionSinConfirmar)
             TarjetaMensaje(Mensaje("Hay una timbrada sin confirmar. Vuelva a timbrar la misma opción; no se duplicará.", TipoMensaje.AVISO), null)
 
-        BotonPrincipal("Ingreso", onIngreso, Modifier.width(170.dp).height(44.dp))
-        Spacer(Modifier.height(14.dp))
-        OutlinedButton(
+        // Solo el botón que corresponde al estado del día. Si el estado no se pudo leer (o hay una timbrada
+        // sin confirmar) se muestran ambos: las reglas igual impiden duplicar.
+        val estado = ui.jornada?.estado
+        val dudoso = ui.marcacionSinConfirmar || (estado == null && !ui.cargando)
+        val verIngreso = dudoso || estado == "SIN_INGRESO"
+        val verSalida = dudoso || estado == "EN_JORNADA"
+
+        if (estado == "JORNADA_CERRADA" && !dudoso)
+            Text("Jornada de hoy completa.", fontWeight = FontWeight.SemiBold, color = NegroVepagas)
+        if (verIngreso) BotonPrincipal("Ingreso", onIngreso, Modifier.width(170.dp).height(44.dp))
+        if (verIngreso && verSalida) Spacer(Modifier.height(14.dp))
+        if (verSalida) OutlinedButton(
             onClick = onSalida,
             shape = RoundedCornerShape(6.dp),
             border = BorderStroke(1.5.dp, NegroVepagas),
