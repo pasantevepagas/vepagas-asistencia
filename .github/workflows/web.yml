@@ -1,0 +1,38 @@
+# En cada push a main que toque web/: publica la versión web (iPhone) en GitHub Pages del repo PÚBLICO
+# de releases (rama gh-pages). Usa el mismo secret RELEASES_TOKEN que la APK.
+# URL: https://<owner>.github.io/<repo-releases>/
+name: Web - publicar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/web.yml']
+  workflow_dispatch:
+
+concurrency: publicar-web
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Publicar web/ en gh-pages
+        env:
+          TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          [ -n "$TOKEN" ] || { echo "::error::Falta el secret RELEASES_TOKEN"; exit 1; }
+          REPO="${{ vars.RELEASES_REPO }}"
+          [ -z "$REPO" ] && REPO=$(grep '^vepagas.releasesRepo=' android/gradle.properties | cut -d= -f2)
+          VERSION="${GITHUB_SHA::7}"
+          cd web
+          # Evita que los teléfonos usen archivos viejos de caché tras una actualización.
+          sed -i "s/\(app\.js\|config\.js\|estilos\.css\)\"/\1?v=$VERSION\"/g" index.html
+          touch .nojekyll
+          git init -q -b gh-pages
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Web $VERSION"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${REPO}.git" gh-pages
+          echo "Publicado: https://$(echo "$REPO" | cut -d/ -f1).github.io/$(echo "$REPO" | cut -d/ -f2)/"

@@ -27,3 +27,6 @@ keystore.properties
 .vscode/
 *.user
 Thumbs.db
+
+# Configuracion de Firebase (no la usa la app; no subir)
+google-services.json
